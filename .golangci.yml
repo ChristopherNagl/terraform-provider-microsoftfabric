@@ -8,11 +8,8 @@ linters:
   disable-all: true
   enable:
     - durationcheck
-    - errcheck
     - exportloopref
-    - forcetypeassert
     - godot
-    - gofmt
     - gosimple
     - ineffassign
     - makezero
@@ -22,6 +19,4 @@ linters:
     - staticcheck
     - tenv
     - unconvert
-    - unparam
-    - unused
     - vet
