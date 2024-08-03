@@ -9,12 +9,12 @@ import (
 	"terraform-microsoft-fabric/internal/apiclient"
 )
 
-// Define the resource
+// Define the resource.
 type workspaceCapacityAssignmentResource struct {
 	client *apiclient.APIClient
 }
 
-// Define the schema
+// Define the schema.
 func (r *workspaceCapacityAssignmentResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Attributes: map[string]schema.Attribute{
@@ -28,25 +28,25 @@ func (r *workspaceCapacityAssignmentResource) Schema(_ context.Context, _ resour
 	}
 }
 
-// Define the model
+// Define the model.
 type workspaceCapacityAssignmentResourceModel struct {
 	WorkspaceID types.String `tfsdk:"workspace_id"`
 	CapacityID  types.String `tfsdk:"capacity_id"`
 }
 
-// Implement Metadata method
+// Implement Metadata method.
 func (r *workspaceCapacityAssignmentResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = "microsoftfabric_workspace_capacity_assignment"
 }
 
-// Define the provider
+// Define the provider.
 func NewWorkspaceCapacityAssignmentResource(client *apiclient.APIClient) resource.Resource {
 	return &workspaceCapacityAssignmentResource{client: client}
 }
 
-// Implement CRUD operations
+// Implement CRUD operations.
 func (r *workspaceCapacityAssignmentResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	// Retrieve values from plan
+	// Retrieve values from plan.
 	var plan workspaceCapacityAssignmentResourceModel
 	diags := req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
@@ -54,7 +54,7 @@ func (r *workspaceCapacityAssignmentResource) Create(ctx context.Context, req re
 		return
 	}
 
-	// Assign capacity to workspace
+	// Assign capacity to workspace.
 	err := r.assignCapacityToWorkspace(plan.WorkspaceID.ValueString(), plan.CapacityID.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -64,7 +64,7 @@ func (r *workspaceCapacityAssignmentResource) Create(ctx context.Context, req re
 		return
 	}
 
-	// Set state
+	// Set state.
 	diags = resp.State.Set(ctx, plan)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -73,18 +73,18 @@ func (r *workspaceCapacityAssignmentResource) Create(ctx context.Context, req re
 }
 
 func (r *workspaceCapacityAssignmentResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	// Implement read operation if needed
+	// Implement read operation if needed.
 }
 
 func (r *workspaceCapacityAssignmentResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	// Implement update operation if needed
+	// Implement update operation if needed.
 }
 
 func (r *workspaceCapacityAssignmentResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	// Implement delete operation if needed
+	// Implement delete operation if needed.
 }
 
-// Implement the function to assign capacity to workspace
+// Implement the function to assign capacity to workspace.
 func (r *workspaceCapacityAssignmentResource) assignCapacityToWorkspace(workspaceID, capacityID string) error {
 	url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/groups/%s/AssignToCapacity", workspaceID)
 	body := map[string]string{"capacityId": capacityID}
