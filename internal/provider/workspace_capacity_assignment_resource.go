@@ -6,7 +6,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"terraform-provider-microsoftfabric/internal/apiclient"
+	"terraform-microsoft-fabric/internal/apiclient"
 )
 
 // Define the resource
