@@ -19,7 +19,7 @@ var (
 func New(version string) func() provider.Provider {
 	return func() provider.Provider {
 		return &microsoftFabricProvider{
-			
+
 			version: version,
 		}
 	}
@@ -94,8 +94,8 @@ func (p *microsoftFabricProvider) Resources(_ context.Context) []func() resource
 		func() resource.Resource { return NewWorkspaceCapacityAssignmentResource(p.client) },
 		func() resource.Resource { return NewEventStreamResource(p.client) },
 		func() resource.Resource { return NewWorkspaceGitResource(p.client) },
-		func() resource.Resource { return NewMLEexperimentResource(p.client) }, 
-		func() resource.Resource { return NewEventhouseResource(p.client) },  
+		func() resource.Resource { return NewMLEexperimentResource(p.client) },
+		func() resource.Resource { return NewEventhouseResource(p.client) },
 		func() resource.Resource { return NewPipelineResource(p.client) },
 	}
 }
