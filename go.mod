@@ -1,4 +1,4 @@
-module terraform-provider-microsoftfabric
+module terraform-microsoft-fabric
 
 go 1.22.5
 
