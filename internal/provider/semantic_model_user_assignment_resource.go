@@ -19,10 +19,10 @@ type semanticModelUserAssignmentResource struct {
 func (r *semanticModelUserAssignmentResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
     resp.Schema = schema.Schema{
         Attributes: map[string]schema.Attribute{
-            "group_id": schema.StringAttribute{
+            "workspace_id": schema.StringAttribute{
                 Required: true,
             },
-            "dataset_id": schema.StringAttribute{
+            "semantic_model_id": schema.StringAttribute{
                 Required: true,
             },
             "users": schema.ListNestedAttribute{
@@ -55,9 +55,9 @@ type userModelSemanticModel struct {
 
 // Define the model for semantic model user assignments.
 type semanticModelUserAssignmentResourceModel struct {
-    GroupID   types.String `tfsdk:"group_id"`
-    DatasetID types.String `tfsdk:"dataset_id"`
-    Users     []userModelSemanticModel  `tfsdk:"users"`
+    WorkspaceID     types.String `tfsdk:"workspace_id"`
+    SemanticModelID types.String `tfsdk:"semantic_model_id"`
+    Users           []userModelSemanticModel `tfsdk:"users"`
 }
 
 // Implement the Metadata method.
@@ -88,17 +88,17 @@ func (r *semanticModelUserAssignmentResource) Create(ctx context.Context, req re
 
     // Assign users to semantic model.
     for _, user := range plan.Users {
-        err := r.semanticAssignUserToDataset(
-            plan.GroupID.ValueString(), 
-            plan.DatasetID.ValueString(), 
+        err := r.semanticAssignUserToSemanticModel(
+            plan.WorkspaceID.ValueString(), 
+            plan.SemanticModelID.ValueString(), 
             user.Email.ValueString(), 
             user.Role.ValueString(), 
             user.PrincipalType.ValueString(), // Add principal type here
         )
         if err != nil {
             resp.Diagnostics.AddError(
-                "Error assigning user to dataset",
-                fmt.Sprintf("Could not assign user %s to dataset: %v", user.Email.ValueString(), err),
+                "Error assigning user to semantic model",
+                fmt.Sprintf("Could not assign user %s to semantic model: %v", user.Email.ValueString(), err),
             )
             return
         }
@@ -152,25 +152,25 @@ func (r *semanticModelUserAssignmentResource) Update(ctx context.Context, req re
     toUpdate := semanticIntersection(plan.Users, state.Users)
     toRemove := semanticDifference(state.Users, plan.Users)
 
-    // Add new users to dataset.
+    // Add new users to semantic model.
     for _, user := range toAdd {
-        err := r.semanticAssignUserToDataset(
-            plan.GroupID.ValueString(), 
-            plan.DatasetID.ValueString(), 
+        err := r.semanticAssignUserToSemanticModel(
+            plan.WorkspaceID.ValueString(), 
+            plan.SemanticModelID.ValueString(), 
             user.Email.ValueString(), 
             user.Role.ValueString(), 
             user.PrincipalType.ValueString(), // Add principal type here
         )
         if err != nil {
             resp.Diagnostics.AddError(
-                "Error assigning user to dataset",
-                fmt.Sprintf("Could not assign user %s to dataset: %v", user.Email.ValueString(), err),
+                "Error assigning user to semantic model",
+                fmt.Sprintf("Could not assign user %s to semantic model: %v", user.Email.ValueString(), err),
             )
             return
         }
     }
 
-    // Update existing users in dataset.
+    // Update existing users in semantic model.
     for _, user := range toUpdate {
         // Check if the user already has the same role
         existingUser := findUserByEmail(state.Users, user.Email.ValueString())
@@ -179,34 +179,34 @@ func (r *semanticModelUserAssignmentResource) Update(ctx context.Context, req re
             continue // Skip if there's no change in user role or principal type
         }
 
-        err := r.semanticUpdateUserInDataset(
-            plan.GroupID.ValueString(), 
-            plan.DatasetID.ValueString(), 
+        err := r.semanticUpdateUserInSemanticModel(
+            plan.WorkspaceID.ValueString(), 
+            plan.SemanticModelID.ValueString(), 
             user.Email.ValueString(), 
             user.Role.ValueString(), 
             user.PrincipalType.ValueString(), // Add principal type here
         )
         if err != nil {
             resp.Diagnostics.AddError(
-                "Error updating user in dataset",
-                fmt.Sprintf("Could not update user %s in dataset: %v", user.Email.ValueString(), err),
+                "Error updating user in semantic model",
+                fmt.Sprintf("Could not update user %s in semantic model: %v", user.Email.ValueString(), err),
             )
             return
         }
     }
 
-    // Remove users from dataset.
+    // Remove users from semantic model.
     for _, user := range toRemove {
-        err := r.semanticRemoveUserFromDataset(
-            state.GroupID.ValueString(), 
-            state.DatasetID.ValueString(), 
+        err := r.semanticRemoveUserFromSemanticModel(
+            state.WorkspaceID.ValueString(), 
+            state.SemanticModelID.ValueString(), 
             user.Email.ValueString(), 
             user.PrincipalType.ValueString(), // Add principal type here
         )
         if err != nil {
             resp.Diagnostics.AddError(
-                "Error removing user from dataset",
-                fmt.Sprintf("Could not remove user %s from dataset: %v", user.Email.ValueString(), err),
+                "Error removing user from semantic model",
+                fmt.Sprintf("Could not remove user %s from semantic model: %v", user.Email.ValueString(), err),
             )
             return
         }
@@ -230,33 +230,33 @@ func (r *semanticModelUserAssignmentResource) Delete(ctx context.Context, req re
         return
     }
 
-    // Remove all users from dataset.
+    // Remove all users from semantic model.
     for _, user := range state.Users {
-        err := r.semanticRemoveUserFromDataset(
-            state.GroupID.ValueString(), 
-            state.DatasetID.ValueString(), 
+        err := r.semanticRemoveUserFromSemanticModel(
+            state.WorkspaceID.ValueString(), 
+            state.SemanticModelID.ValueString(), 
             user.Email.ValueString(), 
             user.PrincipalType.ValueString(), // Add principal type here
         )
         if err != nil {
             resp.Diagnostics.AddError(
-                "Error removing user from dataset",
-                fmt.Sprintf("Could not remove user %s from dataset: %v", user.Email.ValueString(), err),
+                "Error removing user from semantic model",
+                fmt.Sprintf("Could not remove user %s from semantic model: %v", user.Email.ValueString(), err),
             )
             return
         }
     }
 }
 
-// Assign user to dataset.
-func (r *semanticModelUserAssignmentResource) semanticAssignUserToDataset(groupID, datasetID, userEmail, userRole, principalType string) error {
+// Assign user to semantic model.
+func (r *semanticModelUserAssignmentResource) semanticAssignUserToSemanticModel(workspaceID, semanticModelID, userEmail, userRole, principalType string) error {
     body := map[string]string{
         "identifier":           userEmail,
         "principalType":        principalType,
-        "datasetUserAccessRight": userRole,
+        "semanticModelUserAccessRight": userRole, // Adjusted to semantic model terminology
     }
 
-    url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/groups/%s/datasets/%s/users", groupID, datasetID)
+    url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/workspaces/%s/semanticModels/%s/users", workspaceID, semanticModelID)
     _, err := r.client.Post(url, body) // Updated to use POST for assignment
     if err != nil {
         return err
@@ -265,34 +265,32 @@ func (r *semanticModelUserAssignmentResource) semanticAssignUserToDataset(groupI
     return nil
 }
 
-// Update user in dataset.
-// Update user in dataset.
-func (r *semanticModelUserAssignmentResource) semanticUpdateUserInDataset(groupID, datasetID, userEmail, userRole, principalType string) error {
+// Update user in semantic model.
+func (r *semanticModelUserAssignmentResource) semanticUpdateUserInSemanticModel(workspaceID, semanticModelID, userEmail, userRole, principalType string) error {
     body := map[string]string{
         "identifier":            userEmail,
-        "datasetUserAccessRight": userRole,
+        "semanticModelUserAccessRight": userRole, // Adjusted to semantic model terminology
         "principalType":         principalType,
     }
 
-    url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/groups/%s/datasets/%s/users", groupID, datasetID)
+    url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/workspaces/%s/semanticModels/%s/users", workspaceID, semanticModelID)
     _, err := r.client.Put(url, body)
     if err != nil {
-        return fmt.Errorf("failed to update user %s in dataset: %w", userEmail, err)
+        return fmt.Errorf("failed to update user %s in semantic model: %w", userEmail, err)
     }
 
     return nil
 }
 
-
-// Remove user from dataset.
-func (r *semanticModelUserAssignmentResource) semanticRemoveUserFromDataset(groupID, datasetID, userEmail, principalType string) error {
+// Remove user from semantic model.
+func (r *semanticModelUserAssignmentResource) semanticRemoveUserFromSemanticModel(workspaceID, semanticModelID, userEmail, principalType string) error {
     body := map[string]string{
         "identifier":              userEmail,
-        "datasetUserAccessRight":  "None", // Setting the access right to None removes the permissions
+        "semanticModelUserAccessRight":  "None", // Setting the access right to None removes the permissions
         "principalType":           principalType,
     }
 
-    url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/groups/%s/datasets/%s/users", groupID, datasetID)
+    url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/workspaces/%s/semanticModels/%s/users", workspaceID, semanticModelID)
     _, err := r.client.Put(url, body) // Use PUT to update the user's permissions to None
     if err != nil {
         return err
