@@ -17,8 +17,8 @@ description: |-
 terraform {
   required_providers {
     microsoftfabric = {
-      source  = "hashicorp.com/edu/microsoftFabric"
-      version = "0.1.0" # Use the correct version as needed
+      source = "ChristopherNagl/microsoftfabric"
+      version = "0.3.1"
     }
   }
 }
