@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 	"terraform-microsoft-fabric/internal/apiclient"
 )
 
@@ -54,6 +55,15 @@ func (p *microsoftFabricProvider) Schema(_ context.Context, _ provider.SchemaReq
 				Required:    true,
 				Description: "The Tenant ID for Power BI API access.",
 			},
+			"username": schema.StringAttribute{
+				Required:    true,
+				Description: "The username for Power BI API access.",
+			},
+			"password": schema.StringAttribute{
+				Required:    true,
+				Sensitive:   true,
+				Description: "The password for Power BI API access.",
+			},
 			"token_file_path": schema.StringAttribute{
 				Optional:    true,
 				Description: "The path to the token file.",
@@ -64,22 +74,33 @@ func (p *microsoftFabricProvider) Schema(_ context.Context, _ provider.SchemaReq
 
 // Configure prepares a HashiCups API client for data sources and resources.
 func (p *microsoftFabricProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
-	var config struct {
-		ClientID      string `tfsdk:"client_id"`
-		ClientSecret  string `tfsdk:"client_secret"`
-		TenantID      string `tfsdk:"tenant_id"`
-		TokenFilePath string `tfsdk:"token_file_path"`
-	}
+    var config struct {
+        ClientID      string              `tfsdk:"client_id"`
+        ClientSecret  string              `tfsdk:"client_secret"`
+        TenantID      string              `tfsdk:"tenant_id"`
+        Username      string              `tfsdk:"username"`
+        Password      string              `tfsdk:"password"`
+        TokenFilePath types.String        `tfsdk:"token_file_path"` // Use types.String for optional value
+    }
 
-	diags := req.Config.Get(ctx, &config)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
+    diags := req.Config.Get(ctx, &config)
+    resp.Diagnostics.Append(diags...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
 
-	// Initialize the API client with all four parameters
-	p.client = apiclient.NewAPIClient(config.ClientID, config.ClientSecret, config.TenantID, config.TokenFilePath)
+    tokenFilePath := ""
+    if config.TokenFilePath.IsNull() {
+        // If token_file_path is optional and null, set it to an empty string or handle as necessary
+        tokenFilePath = ""
+    } else {
+        tokenFilePath = config.TokenFilePath.ValueString() // Get the string value from the types package
+    }
+
+    // Initialize the API client with all required parameters
+    p.client = apiclient.NewAPIClient(config.ClientID, config.ClientSecret, config.TenantID, config.Username, config.Password, tokenFilePath)
 }
+
 
 // DataSources defines the data sources implemented in the provider.
 func (p *microsoftFabricProvider) DataSources(_ context.Context) []func() datasource.DataSource {

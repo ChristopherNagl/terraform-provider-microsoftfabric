@@ -17,17 +17,21 @@ type APIClient struct {
 	ClientID      string
 	ClientSecret  string
 	TenantID      string
+	Username      string
+	Password      string
 	Token         string
 	TokenExpiry   time.Time
 	TokenFilePath string
 }
 
 // NewAPIClient initializes a new APIClient.
-func NewAPIClient(clientID, clientSecret, tenantID, tokenFilePath string) *APIClient {
+func NewAPIClient(clientID, clientSecret, tenantID, username, password, tokenFilePath string) *APIClient {
 	client := &APIClient{
 		ClientID:      clientID,
 		ClientSecret:  clientSecret,
 		TenantID:      tenantID,
+		Username:      username,
+		Password:      password,
 		TokenFilePath: tokenFilePath,
 	}
 
@@ -80,7 +84,8 @@ func (c *APIClient) saveTokenToFile(tokenData map[string]interface{}) error {
 	return json.NewEncoder(file).Encode(tokenData)
 }
 
-// GetAccessToken retrieves an access token from Azure AD.
+
+// GetAccessToken retrieves an access token from Azure AD using username and password.
 func (c *APIClient) GetAccessToken() error {
 	// Check if the token is still valid
 	if c.Token != "" && time.Now().Before(c.TokenExpiry) {
@@ -89,16 +94,23 @@ func (c *APIClient) GetAccessToken() error {
 
 	authorityURL := "https://login.microsoftonline.com/" + c.TenantID + "/oauth2/v2.0/token"
 	form := url.Values{}
-	form.Set("grant_type", "client_credentials")
+	form.Set("grant_type", "password")
 	form.Set("client_id", c.ClientID)
 	form.Set("client_secret", c.ClientSecret)
 	form.Set("scope", "https://analysis.windows.net/powerbi/api/.default")
+	form.Set("username", c.Username)
+	form.Set("password", c.Password)
 
 	resp, err := http.PostForm(authorityURL, form)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("failed to get access token: %s", string(body))
+	}
 
 	var result map[string]interface{}
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
@@ -111,7 +123,9 @@ func (c *APIClient) GetAccessToken() error {
 
 		// Save the token to file if a token file path is provided.
 		if c.TokenFilePath != "" {
-			c.saveTokenToFile(result)
+			if err := c.saveTokenToFile(result); err != nil {
+				return fmt.Errorf("failed to save token to file: %v", err)
+			}
 		}
 
 		return nil
@@ -119,6 +133,7 @@ func (c *APIClient) GetAccessToken() error {
 
 	return fmt.Errorf("failed to get access token")
 }
+
 
 func (c *APIClient) Get(url string) (map[string]interface{}, error) {
 	// Ensure we have a valid token.
