@@ -30,7 +30,7 @@ provider "microsoftfabric" {
   client_secret = "Txxx"
   tenant_id     = "9xxx"
 
-  #optional but recommended, since many fabric api's dont support service principal yes
+  #optional but recommended, since many fabric api's dont support service principal yet
   username      = "xx"
   password      = "xx"
 }
