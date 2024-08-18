@@ -18,17 +18,21 @@ terraform {
   required_providers {
     microsoftfabric = {
       source = "ChristopherNagl/microsoftfabric"
-      version = "0.3.1"
+      version = "0.4.2"
     }
   }
 }
 
 # 2. Configure the  Microsoft Fabric Provider
 provider "microsoftfabric" {
-  client_id       = "xxxx"
-  client_secret   = "xxxx"
-  tenant_id       = "xxxx"
-  token_file_path = "${path.module}/token.json"
+  #required
+  client_id     = "xxx"
+  client_secret = "Txxx"
+  tenant_id     = "9xxx"
+
+  #optional but recommended, since many fabric api's dont support service principal yes
+  username      = "xx"
+  password      = "xx"
 }
 
 # 3. Create a worksapce
@@ -40,9 +44,11 @@ resource "microsoftfabric_workspace" "example" {
 ![Alt text](docs/example_pictures/step3_create_workspace.PNG)
 *Figure 1: Step 3 - Result*
 ```terraform
-# 4. Assign capacity to workspace
-// to do
-// I only have a trial fabric capacity, so I can't implement this for now
+# 4. assign workspace to capacity
+resource "microsoftfabric_workspace_capacity_assignment" "workspace_assignment" {
+  workspace_id = microsoftfabric_workspace.example.id
+  capacity_id  = "xxxxx"
+}
 ```
 ![Alt text](docs/example_pictures/step4_assign_capacity.PNG)
 *Figure 2: Step 4 - Result of manual assign capacity as workaround*
@@ -54,8 +60,14 @@ resource "microsoftfabric_workspace_user_assignment" "example_assignment" {
 
   users = [
     {
-      email = "AdeleV@3cg7y4.onmicrosoft.com"
-      role  = "Member"
+      email          = "AdeleV@3cg7y4.onmicrosoft.com"
+      role           = "Member"
+      principal_type = "User"
+    },
+    {
+      email          = "f4c6053c-5243-4690-9e1f-f1b5a7558202"
+      role           = "Contributor"
+      principal_type = "Group"
     }
   ]
 }
@@ -130,10 +142,10 @@ resource "microsoftfabric_pipeline" "example_pipeline" {
 - `client_id` (String) The Client ID for Power BI API access.
 - `client_secret` (String, Sensitive) The Client Secret for Power BI API access.
 - `tenant_id` (String) The Tenant ID for Power BI API access.
+- `username` (String) The username for Power BI API access.
+- `password` (String, Sensitive) The password for Power BI API access.
 
 ### Optional
 
 - `token_file_path` (String) The path to the token file, in case that the access token is generated somewhere else
 
-### To do's
-- Add option to login with email and password
