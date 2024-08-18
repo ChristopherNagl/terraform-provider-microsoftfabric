@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"terraform-microsoft-fabric/internal/apiclient"
+	"terraform-provider-microsoftfabric/internal/apiclient"
 )
 
 // Ensure the implementation satisfies the expected interfaces.
