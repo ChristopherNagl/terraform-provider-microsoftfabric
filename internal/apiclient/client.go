@@ -102,7 +102,6 @@ func (c *APIClient) GetAccessToken() error {
 		form.Set("grant_type", "password")
 		form.Set("username", c.Username)
 		form.Set("password", c.Password)
-	} else {
 	}
 
 	resp, err := http.PostForm(authorityURL, form)
