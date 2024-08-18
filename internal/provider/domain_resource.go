@@ -3,11 +3,12 @@ package provider
 import (
 	"context"
 	"fmt"
+	"terraform-provider-microsoftfabric/internal/apiclient"
+	"time"
+
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"terraform-provider-microsoftfabric/internal/apiclient"
-	"time"
 )
 
 type domainResource struct {
@@ -109,7 +110,6 @@ func (r *domainResource) Read(ctx context.Context, req resource.ReadRequest, res
 	}
 }
 
-
 func (r *domainResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var plan domainResourceModel
 	diags := req.Plan.Get(ctx, &plan)
@@ -205,7 +205,6 @@ func (r *domainResource) readDomain(id string) (map[string]interface{}, error) {
 
 	return domain, nil
 }
-
 
 func (r *domainResource) updateDomain(id, displayName, description, parentDomainID string) error {
 	url := fmt.Sprintf("https://api.fabric.microsoft.com/v1/admin/domains/%s", id)

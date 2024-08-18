@@ -3,12 +3,13 @@ package provider
 import (
 	"context"
 
+	"terraform-provider-microsoftfabric/internal/apiclient"
+
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"terraform-provider-microsoftfabric/internal/apiclient"
 )
 
 // Ensure the implementation satisfies the expected interfaces.
@@ -44,25 +45,25 @@ func (p *microsoftFabricProvider) Schema(_ context.Context, _ provider.SchemaReq
 		Attributes: map[string]schema.Attribute{
 			"client_id": schema.StringAttribute{
 				Required:    true,
-				Description: "The Client ID for Power BI API access.",
+				Description: "The Client ID for Fabric API access.",
 			},
 			"client_secret": schema.StringAttribute{
-				Required:    true,
+				Optional:    true,
 				Sensitive:   true,
-				Description: "The Client Secret for Power BI API access.",
+				Description: "The Client Secret for Fabric API access.",
 			},
 			"tenant_id": schema.StringAttribute{
 				Required:    true,
-				Description: "The Tenant ID for Power BI API access.",
+				Description: "The Tenant ID for Fabric API access.",
 			},
 			"username": schema.StringAttribute{
-				Required:    true,
-				Description: "The username for Power BI API access.",
+				Optional:    true,
+				Description: "The username for Fabric API access.",
 			},
 			"password": schema.StringAttribute{
-				Required:    true,
+				Optional:    true,
 				Sensitive:   true,
-				Description: "The password for Power BI API access.",
+				Description: "The password for Fabric API access.",
 			},
 			"token_file_path": schema.StringAttribute{
 				Optional:    true,
@@ -74,33 +75,32 @@ func (p *microsoftFabricProvider) Schema(_ context.Context, _ provider.SchemaReq
 
 // Configure prepares a HashiCups API client for data sources and resources.
 func (p *microsoftFabricProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
-    var config struct {
-        ClientID      string              `tfsdk:"client_id"`
-        ClientSecret  string              `tfsdk:"client_secret"`
-        TenantID      string              `tfsdk:"tenant_id"`
-        Username      string              `tfsdk:"username"`
-        Password      string              `tfsdk:"password"`
-        TokenFilePath types.String        `tfsdk:"token_file_path"` // Use types.String for optional value
-    }
+	var config struct {
+		ClientID      string       `tfsdk:"client_id"`
+		ClientSecret  types.String `tfsdk:"client_secret"`
+		TenantID      string       `tfsdk:"tenant_id"`
+		Username      types.String `tfsdk:"username"`
+		Password      types.String `tfsdk:"password"`
+		TokenFilePath types.String `tfsdk:"token_file_path"` // Use types.String for optional value
+	}
 
-    diags := req.Config.Get(ctx, &config)
-    resp.Diagnostics.Append(diags...)
-    if resp.Diagnostics.HasError() {
-        return
-    }
+	diags := req.Config.Get(ctx, &config)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
-    tokenFilePath := ""
-    if config.TokenFilePath.IsNull() {
-        // If token_file_path is optional and null, set it to an empty string or handle as necessary
-        tokenFilePath = ""
-    } else {
-        tokenFilePath = config.TokenFilePath.ValueString() // Get the string value from the types package
-    }
+	tokenFilePath := ""
+	if config.TokenFilePath.IsNull() {
+		// If token_file_path is optional and null, set it to an empty string or handle as necessary
+		tokenFilePath = ""
+	} else {
+		tokenFilePath = config.TokenFilePath.ValueString() // Get the string value from the types package
+	}
 
-    // Initialize the API client with all required parameters
-    p.client = apiclient.NewAPIClient(config.ClientID, config.ClientSecret, config.TenantID, config.Username, config.Password, tokenFilePath)
+	// Initialize the API client with all required parameters
+	p.client = apiclient.NewAPIClient(config.ClientID, config.ClientSecret.ValueString(), config.TenantID, config.Username.ValueString(), config.Password.ValueString(), tokenFilePath)
 }
-
 
 // DataSources defines the data sources implemented in the provider.
 func (p *microsoftFabricProvider) DataSources(_ context.Context) []func() datasource.DataSource {
@@ -118,7 +118,7 @@ func (p *microsoftFabricProvider) Resources(_ context.Context) []func() resource
 		func() resource.Resource { return NewMLEexperimentResource(p.client) },
 		func() resource.Resource { return NewEventhouseResource(p.client) },
 		func() resource.Resource { return NewPipelineResource(p.client) },
-		func() resource.Resource { return NewSemanticModelUserAssignmentResource(p.client) }, 
+		func() resource.Resource { return NewSemanticModelUserAssignmentResource(p.client) },
 		func() resource.Resource { return NewDomainResource(p.client) },
 	}
 }

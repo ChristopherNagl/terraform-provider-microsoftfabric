@@ -4,11 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"terraform-provider-microsoftfabric/internal/apiclient"
+	"time"
+
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"terraform-provider-microsoftfabric/internal/apiclient"
-	"time"
 )
 
 // Define the combined resource.
