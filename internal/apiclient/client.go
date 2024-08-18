@@ -84,7 +84,6 @@ func (c *APIClient) saveTokenToFile(tokenData map[string]interface{}) error {
 	return json.NewEncoder(file).Encode(tokenData)
 }
 
-
 // GetAccessToken retrieves an access token from Azure AD using username and password.
 func (c *APIClient) GetAccessToken() error {
 	// Check if the token is still valid
@@ -94,12 +93,17 @@ func (c *APIClient) GetAccessToken() error {
 
 	authorityURL := "https://login.microsoftonline.com/" + c.TenantID + "/oauth2/v2.0/token"
 	form := url.Values{}
-	form.Set("grant_type", "password")
 	form.Set("client_id", c.ClientID)
 	form.Set("client_secret", c.ClientSecret)
+	form.Set("grant_type", "client_credentials")
 	form.Set("scope", "https://analysis.windows.net/powerbi/api/.default")
-	form.Set("username", c.Username)
-	form.Set("password", c.Password)
+
+	if c.Username != "" { //use ROPC Flow (username+password) for authentication and overwrite values
+		form.Set("grant_type", "password")
+		form.Set("username", c.Username)
+		form.Set("password", c.Password)
+	} else {
+	}
 
 	resp, err := http.PostForm(authorityURL, form)
 	if err != nil {
@@ -133,7 +137,6 @@ func (c *APIClient) GetAccessToken() error {
 
 	return fmt.Errorf("failed to get access token")
 }
-
 
 func (c *APIClient) Get(url string) (map[string]interface{}, error) {
 	// Ensure we have a valid token.

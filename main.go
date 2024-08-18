@@ -10,7 +10,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 
-	"terraform-microsoft-fabric/internal/provider"
+	"terraform-provider-microsoftfabric/internal/provider"
 )
 
 // Run "go generate" to format example terraform files and generate the docs for the registry/website

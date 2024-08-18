@@ -3,10 +3,11 @@ package provider
 import (
 	"context"
 	"fmt"
+	"terraform-provider-microsoftfabric/internal/apiclient"
+
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"terraform-microsoft-fabric/internal/apiclient"
 )
 
 // Define the resource.
