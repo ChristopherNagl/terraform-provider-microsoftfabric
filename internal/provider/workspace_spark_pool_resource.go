@@ -120,7 +120,7 @@ func NewSparkPoolResource(client *apiclient.APIClient) resource.Resource {
     return &sparkPoolResource{client: client}
 }
 
-// Implement CRUD operations
+// Implement CRUD operations.
 func (r *sparkPoolResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
     var plan sparkPoolResourceModel
     diags := req.Plan.Get(ctx, &plan)
