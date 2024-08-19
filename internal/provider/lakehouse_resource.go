@@ -68,7 +68,7 @@ func (r *lakehouseResource) Metadata(_ context.Context, req resource.MetadataReq
     resp.TypeName = "microsoftfabric_lakehouse"
 }
 
-// Function to safely retrieve strings from maps
+
 func getMapString(key string, m map[string]interface{}) (string, bool) {
     if value, ok := m[key]; ok {
         if str, ok := value.(string); ok {
