@@ -36,3 +36,5 @@ resource "microsoftfabric_lakehouse" "example_lakehouse" {
 
 - `id` (String) The unique identifier for the lakehouse resource.
 - `last_updated` (String) The timestamp of the last update made to the lakehouse resource.
+- `one_lake_tables_path` (String) Path for OneLake tables associated with the lakehouse.
+- `sql_connection_string` (String) Connection string for SQL endpoint associated with the lakehouse. The creation of this endpoints takes some time. Thus this resource needs about 15 seconds to be created
