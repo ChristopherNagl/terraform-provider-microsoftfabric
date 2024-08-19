@@ -22,54 +22,69 @@ func (r *sparkPoolResource) Schema(_ context.Context, _ resource.SchemaRequest, 
     resp.Schema = schema.Schema{
         Attributes: map[string]schema.Attribute{
             "id": schema.StringAttribute{
-                Computed: true,
+                Computed:    true,
+                Description: "Custom pool ID.",
             },
             "workspace_id": schema.StringAttribute{
-                Required: true,
+                Required:    true,
+                Description: "ID of the workspace to which the custom pool belongs.",
             },
             "name": schema.StringAttribute{
-                Required: true,
+                Required:    true,
+                Description: "Custom pool name. The name must be between 1 and 64 characters long and must contain only letters, numbers, dashes, underscores, and spaces. Custom pool names must be unique within the workspace. 'Starter Pool' is a reserved custom pool name.",
             },
             "node_family": schema.StringAttribute{
-                Required: true,
+                Required:    true,
+                Description: "Node family. Available options include 'MemoryOptimized'. Additional NodeFamily types may be added over time.",
             },
             "node_size": schema.StringAttribute{
-                Required: true,
+                Required:    true,
+                Description: "Node size. Available options include 'Small', 'Medium', 'Large', 'XLarge', 'XXLarge'. Additional NodeSize types may be added over time.",
             },
             "auto_scale": schema.SingleNestedAttribute{
-                Required: true,
+                Required:    true,
+                Description: "Autoscale properties.",
                 Attributes: map[string]schema.Attribute{
                     "enabled": schema.BoolAttribute{
-                        Required: true,
+                        Required:    true,
+                        Description: "The status of the autoscale. False - Disabled, true - Enabled.",
                     },
-                    "min_node_count": schema.Int64Attribute{ 
-                        Required: true,
+                    "min_node_count": schema.Int64Attribute{
+                        Required:    true,
+                        Description: "The minimum node count.",
                     },
-                    "max_node_count": schema.Int64Attribute{ 
-                        Required: true,
+                    "max_node_count": schema.Int64Attribute{
+                        Required:    true,
+                        Description: "The maximum node count.",
                     },
                 },
             },
             "dynamic_executor_allocation": schema.SingleNestedAttribute{
-                Required: true,
+                Required:    true,
+                Description: "Dynamic executor allocation properties.",
                 Attributes: map[string]schema.Attribute{
                     "enabled": schema.BoolAttribute{
-                        Required: true,
+                        Required:    true,
+                        Description: "The status of the dynamic executor allocation. False - Disabled, true - Enabled.",
                     },
-                    "min_executors": schema.Int64Attribute{ 
-                        Required: true,
+                    "min_executors": schema.Int64Attribute{
+                        Required:    true,
+                        Description: "The minimum number of executors.",
                     },
-                    "max_executors": schema.Int64Attribute{ 
-                        Required: true,
+                    "max_executors": schema.Int64Attribute{
+                        Required:    true,
+                        Description: "The maximum number of executors.",
                     },
                 },
             },
             "last_updated": schema.StringAttribute{
-                Computed: true,
+                Computed:    true,
+                Description: "The timestamp of the last update.",
             },
         },
     }
 }
+
 
 // Define the model for the Spark pool resource.
 type sparkPoolResourceModel struct {
