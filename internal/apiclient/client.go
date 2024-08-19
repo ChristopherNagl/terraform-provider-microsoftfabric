@@ -488,3 +488,59 @@ func (c *APIClient) pollOperationResult(operationID string) (map[string]interfac
 		time.Sleep(2 * time.Second)
 	}
 }
+
+// Patch makes a PATCH request to the specified URL with the given body.
+func (c *APIClient) PatchBytes(url string, body map[string]interface{}) (map[string]interface{}, error) {
+    // Ensure we have a valid token.
+    if err := c.GetAccessToken(); err != nil {
+        return nil, fmt.Errorf("failed to acquire token: %v", err)
+    }
+
+    bodyBytes, err := json.Marshal(body)
+    if err != nil {
+        return nil, fmt.Errorf("failed to marshal request body: %v", err)
+    }
+
+    req, err := http.NewRequest("PATCH", url, bytes.NewBuffer(bodyBytes))
+    if err != nil {
+        return nil, err
+    }
+    req.Header.Set("Content-Type", "application/json")
+    req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.Token))
+
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    if err != nil {
+        return nil, err
+    }
+    defer resp.Body.Close()
+
+    // Log the status code for debugging.
+    fmt.Printf("HTTP Status Code: %d\n", resp.StatusCode)
+
+    // Read the response body for debugging.
+    responseBodyBytes, err := io.ReadAll(resp.Body)
+    if err != nil {
+        return nil, fmt.Errorf("failed to read response body: %v", err)
+    }
+    fmt.Printf("Response Body: %s\n", string(responseBodyBytes))
+
+    // Handle non-success status codes.
+    if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted {
+        return nil, fmt.Errorf("request failed with status code %d: %s", resp.StatusCode, string(responseBodyBytes))
+    }
+
+    // Handle empty response body.
+    if len(responseBodyBytes) == 0 {
+        // Return nil for response body if it's empty.
+        return nil, nil
+    }
+
+    // Parse the response body.
+    var responseBody map[string]interface{}
+    if err := json.Unmarshal(responseBodyBytes, &responseBody); err != nil {
+        return nil, fmt.Errorf("failed to parse response body: %v", err)
+    }
+
+    return responseBody, nil
+}
