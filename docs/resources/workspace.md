@@ -23,7 +23,11 @@ resource "microsoftfabric_workspace" "example" {
 
 ### Required
 
-- `name` (String)
+- `name` (String) The workspace display name. The display name cannot contain more than 256 characters. Only unused workspace names are allowed. 'Admin monitoring' is a reserved workspace name.
+
+### Optional
+
+- `description` (String) The workspace description. The description cannot contain more than 4000 characters.
 
 ### Read-Only
 
