@@ -89,7 +89,6 @@ func (r *workspaceResource) Create(ctx context.Context, req resource.CreateReque
 }
 
 func (r *workspaceResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-    // Retrieve ID from state.
     var state workspaceResourceModel
     diags := req.State.Get(ctx, &state)
     resp.Diagnostics.Append(diags...)
@@ -97,7 +96,7 @@ func (r *workspaceResource) Read(ctx context.Context, req resource.ReadRequest, 
         return
     }
 
-    // Read workspace.
+    // Read the workspace using the ID from the state
     workspace, err := r.readWorkspace(state.ID.ValueString())
     if err != nil {
         resp.Diagnostics.AddError(
@@ -107,33 +106,35 @@ func (r *workspaceResource) Read(ctx context.Context, req resource.ReadRequest, 
         return
     }
 
-    // Check for the presence of the "name" key and ensure it's a string.
-    name, ok := workspace["displayName"].(string)
-    if !ok {
+    // Ensure the workspace exists
+    if workspace == nil {
         resp.Diagnostics.AddError(
-            "Error reading workspace",
-            "Unexpected response format: 'name' key not found or not a string",
+            "Workspace not found",
+            "The workspace with ID "+state.ID.ValueString()+" does not exist.",
         )
+        resp.State.RemoveResource(ctx)
         return
     }
 
-    // Check for the presence of the "description" key and ensure it's a string.
-    description, ok := workspace["description"].(string)
-    if ok {
+    // Update the state fields from the API response
+    if name, ok := workspace["displayName"].(string); ok {
+        state.Name = types.StringValue(name)
+    } else {
+        resp.Diagnostics.AddError("Error reading workspace", "Display name not found in API response")
+        return
+    }
+
+    // Handle the description
+    if description, ok := workspace["description"].(string); ok && description != "" {
         state.Description = types.StringValue(description)
     } else {
-        state.Description = types.StringNull() // Set to null if there is no description.
+        state.Description = types.StringNull() // Indicate that it is not set
     }
 
-    // Set state.
-    state.Name = types.StringValue(name)
-    state.LastUpdated = types.StringValue(time.Now().Format(time.RFC850))
-
+    // Update the state in response
     diags = resp.State.Set(ctx, state)
     resp.Diagnostics.Append(diags...)
-    if resp.Diagnostics.HasError() {
-        return
-    }
+
 }
 
 func (r *workspaceResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
