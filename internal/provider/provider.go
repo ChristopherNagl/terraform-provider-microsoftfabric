@@ -123,5 +123,6 @@ func (p *microsoftFabricProvider) Resources(_ context.Context) []func() resource
 		func() resource.Resource { return NewLakehouseResource(p.client) },
 		func() resource.Resource { return NewSparkPoolResource(p.client) },
 		func() resource.Resource { return NewDomainWorkspaceAssignResource(p.client) },
+		func() resource.Resource { return NewShortcutResource(p.client) },
 	}
 }
