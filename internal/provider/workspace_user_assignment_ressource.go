@@ -3,12 +3,13 @@ package provider
 import (
     "context"
     "fmt"
+    "sort"
+    
+    "terraform-provider-microsoftfabric/internal/apiclient"
 
-	"terraform-provider-microsoftfabric/internal/apiclient"
-
-	"github.com/hashicorp/terraform-plugin-framework/resource"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/types"
+    "github.com/hashicorp/terraform-plugin-framework/resource"
+    "github.com/hashicorp/terraform-plugin-framework/resource/schema"
+    "github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 // Define the resource.
@@ -68,7 +69,6 @@ func NewWorkspaceUserAssignmentResource(client *apiclient.APIClient) resource.Re
 
 // Implement Create operation.
 func (r *workspaceUserAssignmentResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-    // Retrieve values from plan.
     var plan workspaceUserAssignmentResourceModel
     diags := req.Plan.Get(ctx, &plan)
     resp.Diagnostics.Append(diags...)
@@ -76,19 +76,20 @@ func (r *workspaceUserAssignmentResource) Create(ctx context.Context, req resour
         return
     }
 
-    // Check for duplicate emails.
     if err := checkDuplicateEmails(plan.Users); err != nil {
         resp.Diagnostics.AddError("Duplicate email found", err.Error())
         return
     }
 
-    // Assign users to workspace.
+    SortUsers(&plan.Users)
+
     for _, user := range plan.Users {
         principalType := user.PrincipalType.ValueString()
         if principalType == "" {
             resp.Diagnostics.AddError("Missing principal_type", "The principal_type field must be provided.")
             return
         }
+
         err := r.assignUserToWorkspace(plan.WorkspaceID.ValueString(), user.Email.ValueString(), user.Role.ValueString(), principalType)
         if err != nil {
             resp.Diagnostics.AddError(
@@ -99,57 +100,42 @@ func (r *workspaceUserAssignmentResource) Create(ctx context.Context, req resour
         }
     }
 
-    // Set state.
     diags = resp.State.Set(ctx, plan)
     resp.Diagnostics.Append(diags...)
-    if resp.Diagnostics.HasError() {
-        return
-    }
 }
 
 // Implement Read operation.
 func (r *workspaceUserAssignmentResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-    // Retrieve values from state.
-    var state workspaceUserAssignmentResourceModel
-    diags := req.State.Get(ctx, &state)
-    resp.Diagnostics.Append(diags...)
-    if resp.Diagnostics.HasError() {
-        return
-    }
-
-    // Not implemented; add logic to read the current state from your backend (if applicable).
+    // Implementation goes here...
 }
 
 // Implement Update operation.
 func (r *workspaceUserAssignmentResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-    // Retrieve values from state.
-    var state workspaceUserAssignmentResourceModel
+    var state, plan workspaceUserAssignmentResourceModel
     diags := req.State.Get(ctx, &state)
     resp.Diagnostics.Append(diags...)
     if resp.Diagnostics.HasError() {
         return
     }
 
-    // Retrieve values from plan.
-    var plan workspaceUserAssignmentResourceModel
     diags = req.Plan.Get(ctx, &plan)
     resp.Diagnostics.Append(diags...)
     if resp.Diagnostics.HasError() {
         return
     }
 
-    // Check for duplicate emails.
     if err := checkDuplicateEmails(plan.Users); err != nil {
         resp.Diagnostics.AddError("Duplicate email found", err.Error())
         return
     }
 
-    // Determine users to be added, updated, and removed.
+    SortUsers(&plan.Users)
+    SortUsers(&state.Users)
+
     toAdd := difference(plan.Users, state.Users)
     toUpdate, _ := intersection(plan.Users, state.Users)
     toRemove := difference(state.Users, plan.Users)
 
-    // Add new users to workspace.
     for _, user := range toAdd {
         principalType := user.PrincipalType.ValueString()
         if principalType == "" {
@@ -167,7 +153,6 @@ func (r *workspaceUserAssignmentResource) Update(ctx context.Context, req resour
         }
     }
 
-    // Update existing users in workspace.
     for _, user := range toUpdate {
         principalType := user.PrincipalType.ValueString()
         err := r.updateUserInWorkspace(plan.WorkspaceID.ValueString(), user.Email.ValueString(), user.Role.ValueString(), principalType)
@@ -180,7 +165,6 @@ func (r *workspaceUserAssignmentResource) Update(ctx context.Context, req resour
         }
     }
 
-    // Remove users from workspace.
     for _, user := range toRemove {
         err := r.removeUserFromWorkspace(state.WorkspaceID.ValueString(), user.Email.ValueString())
         if err != nil {
@@ -192,17 +176,12 @@ func (r *workspaceUserAssignmentResource) Update(ctx context.Context, req resour
         }
     }
 
-    // Set state.
     diags = resp.State.Set(ctx, plan)
     resp.Diagnostics.Append(diags...)
-    if resp.Diagnostics.HasError() {
-        return
-    }
 }
 
 // Implement Delete operation.
 func (r *workspaceUserAssignmentResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-    // Retrieve values from state.
     var state workspaceUserAssignmentResourceModel
     diags := req.State.Get(ctx, &state)
     resp.Diagnostics.Append(diags...)
@@ -210,7 +189,6 @@ func (r *workspaceUserAssignmentResource) Delete(ctx context.Context, req resour
         return
     }
 
-    // Remove all users from workspace.
     for _, user := range state.Users {
         err := r.removeUserFromWorkspace(state.WorkspaceID.ValueString(), user.Email.ValueString())
         if err != nil {
@@ -233,11 +211,7 @@ func (r *workspaceUserAssignmentResource) assignUserToWorkspace(workspaceID, use
 
     url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/groups/%s/users", workspaceID)
     _, err := r.client.Post(url, body)
-    if err != nil {
-        return err
-    }
-
-    return nil
+    return err
 }
 
 // Implement user update function.
@@ -250,22 +224,13 @@ func (r *workspaceUserAssignmentResource) updateUserInWorkspace(workspaceID, use
 
     url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/groups/%s/users", workspaceID)
     _, err := r.client.Put(url, body)
-    if err != nil {
-        return err
-    }
-
-    return nil
+    return err
 }
 
 // Implement user removal function.
 func (r *workspaceUserAssignmentResource) removeUserFromWorkspace(workspaceID, userEmail string) error {
     url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/groups/%s/users/%s", workspaceID, userEmail)
-    err := r.client.Delete(url)
-    if err != nil {
-        return err
-    }
-
-    return nil
+    return r.client.Delete(url)
 }
 
 // Check for duplicate emails.
@@ -281,15 +246,6 @@ func checkDuplicateEmails(users []userModel) error {
 }
 
 // Utility functions to compute differences and intersections between user slices.
-func findUserIndex(users []userModel, email string) int {
-    for i, user := range users {
-        if user.Email.ValueString() == email {
-            return i
-        }
-    }
-    return -1
-}
-
 func difference(a, b []userModel) []userModel {
     mb := make(map[string]bool, len(b))
     for _, user := range b {
@@ -316,4 +272,11 @@ func intersection(a, b []userModel) ([]userModel, []userModel) {
         }
     }
     return inter, []userModel{}
+}
+
+// Sort users in-place by email.
+func SortUsers(users *[]userModel) {
+    sort.Slice(*users, func(i, j int) bool {
+        return (*users)[i].Email.ValueString() < (*users)[j].Email.ValueString()
+    })
 }
