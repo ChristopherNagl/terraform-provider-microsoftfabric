@@ -6,18 +6,17 @@ import (
     "fmt"
     "terraform-provider-microsoftfabric/internal/apiclient"
     "time"
+    
 
     "github.com/hashicorp/terraform-plugin-framework/resource"
     "github.com/hashicorp/terraform-plugin-framework/resource/schema"
     "github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-// Define the lakehouse table resource.
 type lakehouseTableResource struct {
     client *apiclient.APIClient
 }
 
-// Define the schema for the lakehouse table resource.
 func (r *lakehouseTableResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
     resp.Schema = schema.Schema{
         Attributes: map[string]schema.Attribute{
@@ -82,7 +81,6 @@ func (r *lakehouseTableResource) Schema(_ context.Context, _ resource.SchemaRequ
     }
 }
 
-// Define the model for the lakehouse table resource.
 type lakehouseTableResourceModel struct {
     ID            types.String       `tfsdk:"id"`
     WorkspaceID   types.String       `tfsdk:"workspace_id"`
@@ -93,7 +91,7 @@ type lakehouseTableResourceModel struct {
     Mode          types.String       `tfsdk:"mode"`
     Recursive     types.Bool         `tfsdk:"recursive"`
     FileExtension types.String       `tfsdk:"file_extension"`
-    FormatOptions formatOptionsModel  `tfsdk:"format_options"`
+    FormatOptions formatOptionsModel `tfsdk:"format_options"`
     LastUpdated   types.String       `tfsdk:"last_updated"`
 }
 
@@ -103,17 +101,14 @@ type formatOptionsModel struct {
     Delimiter types.String `tfsdk:"delimiter"`
 }
 
-// Implement Metadata method.
 func (r *lakehouseTableResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
     resp.TypeName = "microsoftfabric_lakehouse_table"
 }
 
-// Define the provider.
 func NewLakehouseTableResource(client *apiclient.APIClient) resource.Resource {
     return &lakehouseTableResource{client: client}
 }
 
-// Implement CRUD operations.
 func (r *lakehouseTableResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
     var plan lakehouseTableResourceModel
     diags := req.Plan.Get(ctx, &plan)
@@ -131,16 +126,13 @@ func (r *lakehouseTableResource) Create(ctx context.Context, req resource.Create
         return
     }
 
-    // Set operation ID and LastUpdated fields
     plan.ID = types.StringValue(operationID)
     plan.LastUpdated = types.StringValue(time.Now().Format(time.RFC850))
 
-    // Set state.
     diags = resp.State.Set(ctx, plan)
     resp.Diagnostics.Append(diags...)
 }
 
-// Implement Read method.
 func (r *lakehouseTableResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
     var state lakehouseTableResourceModel
     diags := req.State.Get(ctx, &state)
@@ -163,15 +155,7 @@ func (r *lakehouseTableResource) Read(ctx context.Context, req resource.ReadRequ
         return
     }
 
-    // Assert the received data is a map
-    tables, ok := tableInfo.(map[string]interface{})
-    if !ok {
-        resp.Diagnostics.AddError(
-            "Error reading tables",
-            "Unexpected response format: expected an object.",
-        )
-        return
-    }
+    tables := tableInfo // Use it directly as it is of type map[string]interface{}
 
     // Extract relevant data from the response
     data, exists := tables["data"].([]interface{})
@@ -196,22 +180,10 @@ func (r *lakehouseTableResource) Read(ctx context.Context, req resource.ReadRequ
                 "Table missing",
                 fmt.Sprintf("The table '%s' specified in the state does not exist in the lakehouse. Terraform will recreate it.", state.TableName.ValueString()),
             )
+            // Remove the resource from state to force a recreation
+            resp.State.RemoveResource(ctx)
+            return
         }
-    }
-
-    // Update state with the current data
-    if len(data) > 0 {
-        firstItem := data[0].(map[string]interface{}) // This assumes there is at least one item.
-        if name, ok := firstItem["name"].(string); ok {
-            state.TableName = types.StringValue(name)
-            state.LastUpdated = types.StringValue(time.Now().Format(time.RFC850))
-            state.ID = types.StringValue(fmt.Sprintf("Files/%s", name))
-        }
-    } else {
-        resp.Diagnostics.AddWarning(
-            "No tables found",
-            "The specified lakehouse does not contain any tables.",
-        )
     }
 
     // Update the state
@@ -219,12 +191,11 @@ func (r *lakehouseTableResource) Read(ctx context.Context, req resource.ReadRequ
     resp.Diagnostics.Append(diags...)
 }
 
-// Implement Update method.
+
 func (r *lakehouseTableResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
     resp.Diagnostics.AddError("Error updating resource", "Update operation for lakehouse table is not supported.")
 }
 
-// Implement Delete method.
 func (r *lakehouseTableResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
     var state lakehouseTableResourceModel
     diags := req.State.Get(ctx, &state)
@@ -235,14 +206,12 @@ func (r *lakehouseTableResource) Delete(ctx context.Context, req resource.Delete
 
     // Deletion logic might be added here, if needed
     resp.State.RemoveResource(ctx)
-}
 
-// Load table logic here
+}
 func (r *lakehouseTableResource) loadTable(plan lakehouseTableResourceModel) (string, error) {
     url := fmt.Sprintf("https://api.fabric.microsoft.com/v1/workspaces/%s/lakehouses/%s/tables/%s/load",
         plan.WorkspaceID.ValueString(), plan.LakehouseID.ValueString(), plan.TableName.ValueString())
 
-    // Prepare the request body
     body := map[string]interface{}{
         "relativePath":  plan.RelativePath.ValueString(),
         "pathType":      plan.PathType.ValueString(),
@@ -254,19 +223,16 @@ func (r *lakehouseTableResource) loadTable(plan lakehouseTableResourceModel) (st
         "delimiter":     plan.FormatOptions.Delimiter.ValueString(),
     }
 
-    // Marshal the body to JSON
     jsonBody, err := json.Marshal(body)
     if err != nil {
         return "", fmt.Errorf("failed to marshal body: %v", err)
     }
 
-    // Call PostBytes expecting an empty response body on success
     _, err = r.client.PostBytes(url, jsonBody)
     if err != nil {
         return "", fmt.Errorf("failed to create table: %v", err)
     }
 
-    // Since the response for success is empty, we construct the ID manually
     id := fmt.Sprintf("Files/%s", plan.TableName.ValueString())
 
     return id, nil
