@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"terraform-provider-microsoftfabric/internal/apiclient"
 	"time"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -133,7 +134,7 @@ func (r *workspaceGitResource) Create(ctx context.Context, req resource.CreateRe
 	}
 
 	// Set fields.
-	plan.ID = types.StringValue(plan.WorkspaceID.ValueString() + "-git")
+	plan.ID = types.StringValue(plan.WorkspaceID.ValueString())
 	plan.RemoteCommitHash = types.StringValue(remoteCommitHash)
 	plan.LastUpdated = types.StringValue(time.Now().Format(time.RFC850))
 
@@ -143,16 +144,84 @@ func (r *workspaceGitResource) Create(ctx context.Context, req resource.CreateRe
 }
 
 func (r *workspaceGitResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	// Retrieve ID from state.
-	var state workspaceGitResourceModel
-	diags := req.State.Get(ctx, &state)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
+    var state workspaceGitResourceModel
+    diags := req.State.Get(ctx, &state)
+    resp.Diagnostics.Append(diags...)
+    if resp.Diagnostics.HasError() {
+        return
+    }
 
-	// Implement the logic to read the current state if necessary.
+    // Construct the GET URL for the Git connection details.
+    url := fmt.Sprintf("https://api.fabric.microsoft.com/v1/workspaces/%s/git/connection", state.WorkspaceID.ValueString())
+
+    // Make the GET request.
+    respBody, err := r.client.Get(url)
+    if err != nil {
+        if isNotFoundError(err) {
+            // Resource no longer exists, mark it for recreation
+            resp.State.RemoveResource(ctx)
+            return
+        }
+
+        resp.Diagnostics.AddError(
+            "Error reading Git connection",
+            fmt.Sprintf("Could not read Git connection for workspace ID %s: %s", state.WorkspaceID.ValueString(), err.Error()),
+        )
+        return
+    }
+
+    // Handle the response to determine if the resource exists.
+    gitProviderDetails, ok := respBody["gitProviderDetails"].(map[string]interface{})
+    if !ok {
+        // If the resource details are not found, mark it as needing creation.
+        resp.State.RemoveResource(ctx)
+        return
+    }
+
+    // Update state based on the response
+    state.GitProviderDetails = GitProviderDetailsModel{
+        OrganizationName: types.StringValue(gitProviderDetails["organizationName"].(string)),
+        ProjectName:      types.StringValue(gitProviderDetails["projectName"].(string)),
+        GitProviderType:  types.StringValue(gitProviderDetails["gitProviderType"].(string)),
+        RepositoryName:   types.StringValue(gitProviderDetails["repositoryName"].(string)),
+        BranchName:       types.StringValue(gitProviderDetails["branchName"].(string)),
+        DirectoryName:    types.StringValue(gitProviderDetails["directoryName"].(string)),
+    }
+
+    if gitSyncDetails, ok := respBody["gitSyncDetails"].(map[string]interface{}); ok {
+        if head, ok := gitSyncDetails["head"].(string); ok {
+            state.RemoteCommitHash = types.StringValue(head)
+        }
+        if lastSyncTime, ok := gitSyncDetails["lastSyncTime"].(string); ok {
+            state.LastUpdated = types.StringValue(lastSyncTime)
+        }
+    }
+
+    if gitConnectionState, exists := respBody["gitConnectionState"].(string); !exists || gitConnectionState != "ConnectedAndInitialized" {
+        // If the connection is not in the expected state, mark it as needing creation.
+        resp.State.RemoveResource(ctx)
+        return
+    }
+
+    // Set the state with the updated information.
+    diags = resp.State.Set(ctx, state)
+    resp.Diagnostics.Append(diags...)
 }
+
+
+// isNotFoundError checks whether the error indicates the resource was not found.
+func isNotFoundError(err error) bool {
+    return strings.Contains(err.Error(), "404")
+}
+// Optionally log the response for debugging.
+func logResponse(respBody map[string]interface{}) {
+    // Log the full response body for better debugging.
+    fmt.Printf("API Response: %+v\n", respBody)
+}
+
+
+
+
 
 func (r *workspaceGitResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Retrieve values from plan.
