@@ -18,7 +18,7 @@ terraform {
   required_providers {
     microsoftfabric = {
       source = "ChristopherNagl/microsoftfabric"
-      version = "0.4.2"
+      version = "0.5.1"
     }
   }
 }
@@ -139,11 +139,11 @@ resource "microsoftfabric_pipeline" "example_pipeline" {
 
 ### Required
 
-- `client_id` (String) The Client ID for Power BI API access.
-- `client_secret` (String, Sensitive) The Client Secret for Power BI API access.
-- `tenant_id` (String) The Tenant ID for Power BI API access.
-- `username` (String) The username for Power BI API access.
-- `password` (String, Sensitive) The password for Power BI API access.
+- `client_id` (String) The Client ID for Fabric API access.
+- `client_secret` (String, Sensitive) The Client Secret for Fabric API access.
+- `tenant_id` (String) The Tenant ID for Fabric API access.
+- `username` (String) The username for Fabric API access.
+- `password` (String, Sensitive) The password for Fabric API access.
 
 ### Optional
 
