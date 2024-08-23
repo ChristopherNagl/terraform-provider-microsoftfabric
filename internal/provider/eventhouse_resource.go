@@ -192,7 +192,7 @@ func (r *eventhouseResource) Delete(ctx context.Context, req resource.DeleteRequ
 func (r *eventhouseResource) createEventhouse(workspaceID, displayName, description string) (string, error) {
 	// URL for the API endpoint to create an Eventhouse
 	url := fmt.Sprintf("https://api.fabric.microsoft.com/v1/workspaces/%s/eventhouses", workspaceID)
-	body := map[string]string{
+	body := map[string]interface{}{
 		"displayName": displayName, // Set the display name
 		"description": description, // Set the description
 	}
@@ -236,7 +236,7 @@ func (r *eventhouseResource) readEventhouse(workspaceID, eventhouseID string) (e
 func (r *eventhouseResource) updateEventhouse(workspaceID, eventhouseID, displayName, description string) error {
 	// URL for the API endpoint to update an Eventhouse
 	url := fmt.Sprintf("https://api.fabric.microsoft.com/v1/workspaces/%s/eventhouses/%s", workspaceID, eventhouseID)
-	body := map[string]string{
+	body := map[string]interface{}{
 		"displayName": displayName, // New display name for the Eventhouse
 		"description": description, // New description for the Eventhouse
 	}

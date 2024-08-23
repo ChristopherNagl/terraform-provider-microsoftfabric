@@ -182,7 +182,7 @@ func (r *mlExperimentResource) Delete(ctx context.Context, req resource.DeleteRe
 
 func (r *mlExperimentResource) createMLEExperiment(workspaceID, displayName, description string) (string, error) {
 	url := fmt.Sprintf("https://api.fabric.microsoft.com/v1/workspaces/%s/mlExperiments", workspaceID)
-	body := map[string]string{
+	body := map[string]interface{}{
 		"displayName": displayName,
 		"description": description,
 	}
@@ -220,7 +220,7 @@ func (r *mlExperimentResource) readMLEExperiment(workspaceID, experimentID strin
 
 func (r *mlExperimentResource) updateMLEExperiment(workspaceID, experimentID, displayName, description string) error {
 	url := fmt.Sprintf("https://api.fabric.microsoft.com/v1/workspaces/%s/mlExperiments/%s", workspaceID, experimentID)
-	body := map[string]string{
+	body := map[string]interface{}{
 		"displayName": displayName,
 		"description": description,
 	}

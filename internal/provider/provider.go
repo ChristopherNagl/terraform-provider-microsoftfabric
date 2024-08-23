@@ -125,5 +125,6 @@ func (p *microsoftFabricProvider) Resources(_ context.Context) []func() resource
 		func() resource.Resource { return NewDomainWorkspaceAssignResource(p.client) },
 		func() resource.Resource { return NewShortcutResource(p.client) },
 		func() resource.Resource { return NewLakehouseTableResource(p.client) },
+		func() resource.Resource { return NewKqlDatabaseResource(p.client) },
 	}
 }

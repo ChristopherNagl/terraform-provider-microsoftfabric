@@ -281,7 +281,7 @@ func (r *pipelineResource) Delete(ctx context.Context, req resource.DeleteReques
 // Implement pipeline creation function.
 func (r *pipelineResource) createPipeline(displayName, description string) (string, error) {
 	url := "https://api.powerbi.com/v1.0/myorg/pipelines"
-	body := map[string]string{
+	body := map[string]interface{}{
 		"displayName": displayName,
 		"description": description,
 	}
@@ -313,7 +313,7 @@ func (r *pipelineResource) readPipeline(id string) (map[string]interface{}, erro
 // Implement pipeline update function.
 func (r *pipelineResource) updatePipeline(id, displayName, description string) error {
 	url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/pipelines/%s", id)
-	body := map[string]string{
+	body := map[string]interface{}{
 		"displayName": displayName,
 		"description": description,
 	}
@@ -343,7 +343,7 @@ func (r *pipelineResource) deletePipeline(id string) error {
 // Implement workspace assignment function.
 func (r *pipelineResource) assignWorkspace(pipelineID string, stageOrder int, workspaceID string) error {
 	url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/pipelines/%s/stages/%d/assignWorkspace", pipelineID, stageOrder)
-	body := map[string]string{
+	body := map[string]interface{}{
 		"workspaceId": workspaceID,
 	}
 
@@ -362,7 +362,7 @@ func (r *pipelineResource) assignWorkspace(pipelineID string, stageOrder int, wo
 // Implement workspace unassignment function.
 func (r *pipelineResource) unassignWorkspace(pipelineID string, stageOrder int, workspaceID string) error {
 	url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/pipelines/%s/stages/%d/unassignWorkspace", pipelineID, stageOrder)
-	body := map[string]string{
+	body := map[string]interface{}{
 		"workspaceId": workspaceID,
 	}
 
