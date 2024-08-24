@@ -160,7 +160,7 @@ func (r *domainResource) Delete(ctx context.Context, req resource.DeleteRequest,
 
 func (r *domainResource) createDomain(displayName, description, parentDomainID string) (string, error) {
 	url := "https://api.fabric.microsoft.com/v1/admin/domains"
-	body := map[string]string{
+	body := map[string]interface{}{
 		"displayName":    displayName,
 		"description":    description,
 		"parentDomainId": parentDomainID,
@@ -208,7 +208,7 @@ func (r *domainResource) readDomain(id string) (map[string]interface{}, error) {
 
 func (r *domainResource) updateDomain(id, displayName, description, parentDomainID string) error {
 	url := fmt.Sprintf("https://api.fabric.microsoft.com/v1/admin/domains/%s", id)
-	body := map[string]string{
+	body := map[string]interface{}{
 		"displayName":    displayName,
 		"description":    description,
 		"parentDomainId": parentDomainID,

@@ -23,16 +23,19 @@ terraform {
   }
 }
 
-# 2. Configure the  Microsoft Fabric Provider
+# 2.1 Configure the  Microsoft Fabric Provider using Service Principal
 provider "microsoftfabric" {
-  #required
   client_id     = "xxx"
   client_secret = "Txxx"
   tenant_id     = "9xxx"
+}
 
-  #optional but recommended, since many fabric api's dont support service principal yet
-  username      = "xx"
-  password      = "xx"
+# 2.2 Or configure the Microsoft Fabric Provider using username and passwort login
+provider "microsoftfabric" {
+  client_id     = "xxx"
+  username      = "xx@"
+  password      = "xxXX"
+  tenant_id     = "9xxx"
 }
 
 # 3. Create a worksapce
@@ -139,13 +142,12 @@ resource "microsoftfabric_pipeline" "example_pipeline" {
 
 ### Required
 
-- `client_id` (String) The Client ID for Fabric API access.
-- `client_secret` (String, Sensitive) The Client Secret for Fabric API access.
-- `tenant_id` (String) The Tenant ID for Fabric API access.
-- `username` (String) The username for Fabric API access.
-- `password` (String, Sensitive) The password for Fabric API access.
+- `client_id` (String) The Client ID for Power BI API access.
+- `tenant_id` (String) The Tenant ID for Power BI API access.
 
-### Optional
-
+### Optional 
+- `client_secret` (String, Sensitive) The Client Secret for Power BI API access.
+- `username` (String) The username for Power BI API access.
+- `password` (String, Sensitive) The password for Power BI API access.
 - `token_file_path` (String) The path to the token file, in case that the access token is generated somewhere else
 

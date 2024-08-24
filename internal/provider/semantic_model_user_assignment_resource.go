@@ -251,7 +251,7 @@ func (r *semanticModelUserAssignmentResource) Delete(ctx context.Context, req re
 
 // Assign user to semantic model.
 func (r *semanticModelUserAssignmentResource) semanticAssignUserToSemanticModel(workspaceID, semanticModelID, userEmail, userRole, principalType string) error {
-	body := map[string]string{
+	body := map[string]interface{}{
 		"identifier":                   userEmail,
 		"principalType":                principalType,
 		"semanticModelUserAccessRight": userRole, // Adjusted to semantic model terminology
@@ -268,7 +268,7 @@ func (r *semanticModelUserAssignmentResource) semanticAssignUserToSemanticModel(
 
 // Update user in semantic model.
 func (r *semanticModelUserAssignmentResource) semanticUpdateUserInSemanticModel(workspaceID, semanticModelID, userEmail, userRole, principalType string) error {
-	body := map[string]string{
+	body := map[string]interface{}{
 		"identifier":                   userEmail,
 		"semanticModelUserAccessRight": userRole, // Adjusted to semantic model terminology
 		"principalType":                principalType,
@@ -285,7 +285,7 @@ func (r *semanticModelUserAssignmentResource) semanticUpdateUserInSemanticModel(
 
 // Remove user from semantic model.
 func (r *semanticModelUserAssignmentResource) semanticRemoveUserFromSemanticModel(workspaceID, semanticModelID, userEmail, principalType string) error {
-	body := map[string]string{
+	body := map[string]interface{}{
 		"identifier":                   userEmail,
 		"semanticModelUserAccessRight": "None", // Setting the access right to None removes the permissions
 		"principalType":                principalType,

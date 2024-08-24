@@ -169,7 +169,7 @@ func (c *APIClient) Get(url string) (map[string]interface{}, error) {
 }
 
 // Post makes a POST request to the specified URL with the given body.
-func (c *APIClient) Post(url string, body map[string]string) (map[string]interface{}, error) {
+func (c *APIClient) Post(url string, body map[string]interface{}) (map[string]interface{}, error) {
 	// Ensure we have a valid token
 	if err := c.GetAccessToken(); err != nil {
 		return nil, fmt.Errorf("failed to acquire token: %v", err)
@@ -254,7 +254,7 @@ func (c *APIClient) Delete(url string) error {
 	return nil
 }
 
-func (c *APIClient) Patch(url string, body map[string]string) (map[string]interface{}, error) {
+func (c *APIClient) Patch(url string, body map[string]interface{}) (map[string]interface{}, error) {
 	// Ensure we have a valid token.
 	if err := c.GetAccessToken(); err != nil {
 		return nil, fmt.Errorf("failed to acquire token: %v", err)
@@ -304,7 +304,7 @@ func (c *APIClient) Patch(url string, body map[string]string) (map[string]interf
 }
 
 // Put makes a PUT request to the specified URL with the given body.
-func (c *APIClient) Put(url string, body map[string]string) (map[string]interface{}, error) {
+func (c *APIClient) Put(url string, body map[string]interface{}) (map[string]interface{}, error) {
 	// Ensure we have a valid token.
 	if err := c.GetAccessToken(); err != nil {
 		return nil, fmt.Errorf("failed to acquire token: %v", err)
@@ -405,7 +405,7 @@ func (c *APIClient) PostBytes(url string, bodyBytes []byte) (map[string]interfac
 }
 
 // PostWithOperationCheck makes a POST request and checks the status of the long-running operation.
-func (c *APIClient) PostWithOperationCheck(url string, body map[string]string) (map[string]interface{}, error) {
+func (c *APIClient) PostWithOperationCheck(url string, body map[string]interface{}) (map[string]interface{}, error) {
 	// Ensure we have a valid token
 	if err := c.GetAccessToken(); err != nil {
 		return nil, fmt.Errorf("failed to acquire token: %v", err)
@@ -491,56 +491,56 @@ func (c *APIClient) pollOperationResult(operationID string) (map[string]interfac
 
 // Patch makes a PATCH request to the specified URL with the given body.
 func (c *APIClient) PatchBytes(url string, body map[string]interface{}) (map[string]interface{}, error) {
-    // Ensure we have a valid token.
-    if err := c.GetAccessToken(); err != nil {
-        return nil, fmt.Errorf("failed to acquire token: %v", err)
-    }
+	// Ensure we have a valid token.
+	if err := c.GetAccessToken(); err != nil {
+		return nil, fmt.Errorf("failed to acquire token: %v", err)
+	}
 
-    bodyBytes, err := json.Marshal(body)
-    if err != nil {
-        return nil, fmt.Errorf("failed to marshal request body: %v", err)
-    }
+	bodyBytes, err := json.Marshal(body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request body: %v", err)
+	}
 
-    req, err := http.NewRequest("PATCH", url, bytes.NewBuffer(bodyBytes))
-    if err != nil {
-        return nil, err
-    }
-    req.Header.Set("Content-Type", "application/json")
-    req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.Token))
+	req, err := http.NewRequest("PATCH", url, bytes.NewBuffer(bodyBytes))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.Token))
 
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        return nil, err
-    }
-    defer resp.Body.Close()
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
 
-    // Log the status code for debugging.
-    fmt.Printf("HTTP Status Code: %d\n", resp.StatusCode)
+	// Log the status code for debugging.
+	fmt.Printf("HTTP Status Code: %d\n", resp.StatusCode)
 
-    // Read the response body for debugging.
-    responseBodyBytes, err := io.ReadAll(resp.Body)
-    if err != nil {
-        return nil, fmt.Errorf("failed to read response body: %v", err)
-    }
-    fmt.Printf("Response Body: %s\n", string(responseBodyBytes))
+	// Read the response body for debugging.
+	responseBodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response body: %v", err)
+	}
+	fmt.Printf("Response Body: %s\n", string(responseBodyBytes))
 
-    // Handle non-success status codes.
-    if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted {
-        return nil, fmt.Errorf("request failed with status code %d: %s", resp.StatusCode, string(responseBodyBytes))
-    }
+	// Handle non-success status codes.
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted {
+		return nil, fmt.Errorf("request failed with status code %d: %s", resp.StatusCode, string(responseBodyBytes))
+	}
 
-    // Handle empty response body.
-    if len(responseBodyBytes) == 0 {
-        // Return nil for response body if it's empty.
-        return nil, nil
-    }
+	// Handle empty response body.
+	if len(responseBodyBytes) == 0 {
+		// Return nil for response body if it's empty.
+		return nil, nil
+	}
 
-    // Parse the response body.
-    var responseBody map[string]interface{}
-    if err := json.Unmarshal(responseBodyBytes, &responseBody); err != nil {
-        return nil, fmt.Errorf("failed to parse response body: %v", err)
-    }
+	// Parse the response body.
+	var responseBody map[string]interface{}
+	if err := json.Unmarshal(responseBodyBytes, &responseBody); err != nil {
+		return nil, fmt.Errorf("failed to parse response body: %v", err)
+	}
 
-    return responseBody, nil
+	return responseBody, nil
 }

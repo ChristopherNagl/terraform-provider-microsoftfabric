@@ -196,7 +196,7 @@ func (r *eventstreamResource) Delete(ctx context.Context, req resource.DeleteReq
 
 func (r *eventstreamResource) createEventStream(workspaceID, name, description string) (string, error) {
 	url := fmt.Sprintf("https://api.fabric.microsoft.com/v1/workspaces/%s/eventstreams", workspaceID)
-	body := map[string]string{
+	body := map[string]interface{}{
 		"displayName": name,
 		"description": description,
 	}
@@ -224,7 +224,7 @@ func (r *eventstreamResource) readEventStream(workspaceID, eventStreamID string)
 
 func (r *eventstreamResource) updateEventStream(workspaceID, eventStreamID, name, description string) error {
 	url := fmt.Sprintf("https://api.fabric.microsoft.com/v1/workspaces/%s/eventstreams/%s", workspaceID, eventStreamID)
-	body := map[string]string{
+	body := map[string]interface{}{
 		"displayName": name,
 		"description": description,
 	}
